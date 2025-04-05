@@ -44,5 +44,64 @@ app.get("/scrape/github-developers", async (req, res) => {
     res.status(500).send("Error scraping developers");
   }
 });
+app.get("/scrape/github-repositories", async (req, res) => {
+  const result = [];
+  const { date = "daily" } = req.query;
+
+  try {
+    const { data } = await axios.get(
+      `https://github.com/trending?since=${date}`
+    );
+    const $ = cheerio.load(data);
+
+    $("article.Box-row").each((i, elem) => {
+      const title = $(elem)
+        .find("h2.h3.lh-condensed a")
+        .text()
+        .trim()
+        .replace(/\s/g, "");
+      const repo_url =
+        "https://github.com" +
+        $(elem).find("h2.h3.lh-condensed a").attr("href");
+      const description = $(elem)
+        .find("p.col-9.color-fg-muted.my-1.pr-4")
+        .text()
+        .trim();
+      const language = $(elem)
+        .find("span[itemprop='programmingLanguage']")
+        .text()
+        .trim();
+      const stars = $(elem)
+        .find("a.Link--muted.d-inline-block.mr-3")
+        .first()
+        .text()
+        .trim();
+      const forks = $(elem)
+        .find("a.Link--muted.d-inline-block.mr-3")
+        .eq(1)
+        .text()
+        .trim();
+      const todayStars = $(elem)
+        .find("span.d-inline-block.float-sm-right")
+        .text()
+        .trim();
+
+      result.push({
+        title,
+        repo_url,
+        description: description || "No description",
+        language: language || "N/A",
+        stars,
+        forks,
+        todayStars,
+      });
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error("Scraping failed:", err.message);
+    res.status(500).send("Error scraping trending repositories");
+  }
+});
 
 app.listen(4000, () => console.log("Server running on port 4000"));
