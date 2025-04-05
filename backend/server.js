@@ -44,6 +44,7 @@ app.get("/scrape/github-developers", async (req, res) => {
     res.status(500).send("Error scraping developers");
   }
 });
+
 app.get("/scrape/github-repositories", async (req, res) => {
   const result = [];
   const { date = "daily" } = req.query;
